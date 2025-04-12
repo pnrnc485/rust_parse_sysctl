@@ -1,4 +1,4 @@
-use confparser::{parse_str, ParseError};
+use confparser::{parse_str, errors::ParseError};
 
 #[test]
 fn test_semicolon_comment_line_only() {

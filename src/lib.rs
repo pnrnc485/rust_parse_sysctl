@@ -1,45 +1,14 @@
+pub mod converter;
+pub mod errors;
+
+pub use converter::flatten_to_nested_json;
+use errors::ParseError;
+
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-pub mod converter;
-pub use converter::flatten_to_nested_json;
 
-#[derive(Debug)]
-pub enum ParseError {
-  Io(String),
-  InvalidLine {
-      line_number: usize,
-      content: String,
-  },
-  ValueTooLong {
-    line_number: usize,
-    key: String,
-    length: usize,
-  },
-}
-
-impl From<std::io::Error> for ParseError {
-    fn from(err: std::io::Error) -> Self {
-        ParseError::Io(err.to_string())
-    }
-}
-
-impl std::fmt::Display for ParseError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      match self {
-          ParseError::Io(msg) => write!(f, "IO error: {}", msg),
-          ParseError::InvalidLine { line_number, content } => {
-              write!(f, "Invalid line at {}: '{}'", line_number, content)
-          },
-          ParseError::ValueTooLong { line_number, key, length } => {
-              write!(f, "Value too long at line {}: key '{}' has {} characters (max 4096)", line_number, key, length)
-          }
-      }
-  }
-}
-
-impl std::error::Error for ParseError {}
 
 pub fn parse_str(input: &str) -> Result<BTreeMap<String, String>, ParseError> {
     let mut map = BTreeMap::new();
