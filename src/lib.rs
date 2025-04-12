@@ -37,7 +37,7 @@ pub fn parse_str(input: &str) -> Result<BTreeMap<String, String>, ParseError> {
         let line = line.trim();
         
         // Skip empty lines and comments
-        if line.is_empty() || line.starts_with('#') {
+        if line.is_empty() || line.starts_with('#') || line.starts_with(';') {
             continue;
         }
 
