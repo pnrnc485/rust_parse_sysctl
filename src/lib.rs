@@ -2,6 +2,9 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
+pub mod converter;
+pub use converter::flatten_to_nested_json;
+
 #[derive(Debug)]
 pub enum ParseError {
   Io(String),

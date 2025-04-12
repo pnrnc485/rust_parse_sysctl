@@ -14,7 +14,7 @@ use serde_json::{Map, Value};
 ///     "name": "default.log"
 ///   }
 /// }
-pub fn flatten_to_nested_json(map: &BTreeMap<String, String>) -> Map<String, Value> {
+pub fn flatten_to_nested_json(map: &BTreeMap<String, String>) -> Value {
   let mut root = Map::new();
 
   for (full_key, value) in map {
