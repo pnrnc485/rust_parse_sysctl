@@ -9,6 +9,11 @@ pub enum ParseError {
       line_number: usize,
       content: String,
   },
+  ValueTooLong {
+    line_number: usize,
+    key: String,
+    length: usize,
+  },
 }
 
 impl From<std::io::Error> for ParseError {
@@ -23,6 +28,9 @@ impl std::fmt::Display for ParseError {
           ParseError::Io(msg) => write!(f, "IO error: {}", msg),
           ParseError::InvalidLine { line_number, content } => {
               write!(f, "Invalid line at {}: '{}'", line_number, content)
+          },
+          ParseError::ValueTooLong { line_number, key, length } => {
+              write!(f, "Value too long at line {}: key '{}' has {} characters (max 4096)", line_number, key, length)
           }
       }
   }
@@ -59,6 +67,15 @@ pub fn parse_str(input: &str) -> Result<BTreeMap<String, String>, ParseError> {
                 None => trimmed,
             }
         }.trim();
+
+        // ✅ 長さチェックを追加（4096文字以上ならエラー）
+        if value.len() > 4096 {
+          return Err(ParseError::ValueTooLong {
+            line_number: i + 1,
+            key: key.to_string(),
+            length: value.len(),
+          });
+        }
       
         map.insert(key.trim().to_string(), value.trim().to_string());
     }

@@ -1,4 +1,4 @@
-use confparser::parse_str;
+use confparser::{parse_str, ParseError};
 
 #[test]
 fn test_semicolon_comment_line_only() {
@@ -22,4 +22,13 @@ fn test_dash_prefix_line_is_ignored() {
 
     assert!(result.get("net.ipv4.conf.all.rp_filter").is_none());
     assert_eq!(result.get("kernel.pid_max").unwrap(), "65535");
+}
+
+#[test]
+fn test_value_too_long_error() {
+    let long_value = "a".repeat(4097);
+    let input = format!("kernel.long_value = {}", long_value);
+
+    let result = parse_str(&input);
+    assert!(matches!(result, Err(ParseError::ValueTooLong { .. })));
 }
