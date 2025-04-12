@@ -49,6 +49,16 @@ pub fn parse_str(input: &str) -> Result<BTreeMap<String, String>, ParseError> {
                 content: line.to_string(),
             });
         };
+
+        // 行末コメント対応
+        let key = key.trim();
+        let value = {
+            let trimmed = value.trim();
+            match trimmed.find('#') {
+                Some(pos) => &trimmed[..pos],
+                None => trimmed,
+            }
+        }.trim();
       
         map.insert(key.trim().to_string(), value.trim().to_string());
     }
