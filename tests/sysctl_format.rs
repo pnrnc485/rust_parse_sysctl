@@ -1,4 +1,69 @@
-use confparser::{parse_str, errors::ParseError};
+
+use confparser::{
+    ParseError,
+    parse_str,
+    flatten_to_nested_json,
+};
+use serde_json::json;
+
+#[test]
+fn test_flat_config_parses_correctly() {
+    let input = r#"
+        endpoint = localhost:3000
+        debug = true
+        log.file = /var/log/console.log
+    "#;
+
+    let flat = parse_str(input).unwrap();
+    assert_eq!(flat.get("endpoint"), Some(&"localhost:3000".to_string()));
+    assert_eq!(flat.get("debug"), Some(&"true".to_string()));
+    assert_eq!(flat.get("log.file"), Some(&"/var/log/console.log".to_string()));
+}
+
+#[test]
+fn test_flatten_to_nested_json_input1() {
+    let input = r#"
+        endpoint = localhost:3000
+        debug = true
+        log.file = /var/log/console.log
+    "#;
+
+    let flat = parse_str(input).unwrap();
+    let nested = flatten_to_nested_json(&flat);
+
+    let expected = json!({
+        "endpoint": "localhost:3000",
+        "debug": "true",
+        "log": {
+            "file": "/var/log/console.log"
+        }
+    });
+
+    assert_eq!(nested, expected);
+}
+
+#[test]
+fn test_flatten_to_nested_json_input2() {
+    let input = r#"
+        endpoint = localhost:3000
+        # debug = true
+        log.file = /var/log/console.log
+        log.name = default.log
+    "#;
+
+    let flat = parse_str(input).unwrap();
+    let nested = flatten_to_nested_json(&flat);
+
+    let expected = json!({
+        "endpoint": "localhost:3000",
+        "log": {
+            "file": "/var/log/console.log",
+            "name": "default.log"
+        }
+    });
+
+    assert_eq!(nested, expected);
+}
 
 #[test]
 fn test_semicolon_comment_line_only() {
