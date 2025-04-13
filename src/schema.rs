@@ -95,7 +95,7 @@ pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaEntry>, Pa
     Ok(schema)
 }
 
-/// スキーマに基づいて設定を検証する
+/// スキーマに基づいて設定を検証し、必要に応じて default 値を補完する
 pub fn validate_with_schema(
     config: &mut BTreeMap<String, String>,
     schema: &BTreeMap<String, SchemaEntry>,

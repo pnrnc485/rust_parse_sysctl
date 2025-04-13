@@ -211,3 +211,35 @@ fn test_required_field_missing() {
     assert!(errors[0].contains("log.file"));
     assert!(errors[0].contains("required"));
 }
+
+#[test]
+fn test_default_value_is_inserted() {
+    let mut config = BTreeMap::from([
+        ("log.file".to_string(), "/var/log/app.log".to_string()),
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.file".to_string(), SchemaEntry {
+            typ: SchemaType::String(None),
+            required: true,
+            default: None,
+        }),
+        ("log.level".to_string(), SchemaEntry {
+            typ: SchemaType::String(None),
+            required: false,
+            default: Some("info".to_string()),
+        }),
+        ("timeout".to_string(), SchemaEntry {
+            typ: SchemaType::Int,
+            required: false,
+            default: Some("30".to_string()),
+        }),
+    ]);
+
+    let result = validate_with_schema(&mut config, &schema);
+    assert!(result.is_ok());
+
+    // ✅ default が補完されていることを確認
+    assert_eq!(config.get("log.level"), Some(&"info".to_string()));
+    assert_eq!(config.get("timeout"), Some(&"30".to_string()));
+}
