@@ -1,32 +1,33 @@
 ## 📝 備考
+
 ```
 このリポジトリは、sysctl.conf 互換の設定ファイルを対象としたパーサライブラリ。
-構文解析・構造変換・エラー処理・非同期対応・テストカバレッジの観点で実装を行いました。  
+構文解析・構造変換・エラー処理・非同期対応・テストカバレッジの観点で実装を行いました。
 また、拡張性やメンテナンス性を意識したモジュール分割とAPI設計を行っています。
 ```
 
 # confparser
 
-Rustで構築された、`sysctl.conf` 形式の設定ファイルをパースするライブラリです。
+Rust で構築された、`sysctl.conf` 形式の設定ファイルをパースするライブラリです。
 
 - ✅ `key = value` 形式に対応
 - ✅ コメント行（`#`, `;`）、空行、行頭の `-` を無視
 - ✅ ドット区切りのキーをネスト構造に変換
-- ✅ 値の最大長（4096文字）チェック
-- ✅ JSON形式への変換を提供
+- ✅ 値の最大長（4096 文字）チェック
+- ✅ JSON 形式への変換を提供
 - ✅ **URL からの非同期取得とパースにも対応（`parse_url_async`）**
 
 ---
 
 ## 📦 特徴
 
-| 機能名                     | 内容                                                         |
-|----------------------------|--------------------------------------------------------------|
-| `parse_str(&str)`          | &str から設定をパースし、`BTreeMap<String, String>` を返す   |
-| `parse_file(path)`         | ファイルから設定をパース                                     |
-| `parse_url_async(url)`     | 非同期でURLから設定を取得してパース                         |
-| `flatten_to_nested_json()` | `serde_json::Value` に変換                                   |
-| `ParseError`               | 行番号・内容・エラー種類を含んだエラー型                    |
+| 機能名                     | 内容                                                       |
+| -------------------------- | ---------------------------------------------------------- |
+| `parse_str(&str)`          | &str から設定をパースし、`BTreeMap<String, String>` を返す |
+| `parse_file(path)`         | ファイルから設定をパース                                   |
+| `parse_url_async(url)`     | 非同期で URL から設定を取得してパース                      |
+| `flatten_to_nested_json()` | `serde_json::Value` に変換                                 |
+| `ParseError`               | 行番号・内容・エラー種類を含んだエラー型                   |
 
 ---
 
@@ -82,8 +83,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```
 
-
 #### 出力例：
+
 ```json
 {
   "endpoint": "localhost:3000",
@@ -114,6 +115,7 @@ async fn main() -> Result<(), confparser::ParseError> {
 ```
 
 ### 4. エラーハンドリング
+
 ```rust
 use confparser::{parse_str, ParseError};
 
@@ -132,6 +134,7 @@ fn main() {
 ```
 
 ### 5.　ディレクトリ構成
+
 ```
 confparser/
 ├── src/
@@ -142,8 +145,6 @@ confparser/
 │   └── error.rs
 ├── tests/
 │   ├── sysctl_format.rs
-│   ├── parse_url.rs       # ← 非同期パースのテスト
-│   └── fixtures/
-│       └── test_sysctl.conf
+│   └── parse_url.rs       # ← 非同期パースのテスト
 
 ```
