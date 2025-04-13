@@ -121,14 +121,14 @@ pub fn validate_with_schema(
                     ));
                 }
             }
-            None if entry.required => {
-                errors.push(format!("{}: required field is missing", key));
+            None => {
+                if entry.required {
+                    errors.push(format!("{}: required field is missing", key));
+                } else if let Some(default_value) = &entry.default {
+                    // ✅ default 値を補完
+                    config.insert(key.clone(), default_value.clone());
+                }
             }
-            None if entry.default.is_some() => {
-                // デフォルト値の補完
-                config.insert(key.clone(), entry.default.clone().unwrap());
-            }
-            _ => {} // 任意項目が存在しない場合は無視
         }
     }
 

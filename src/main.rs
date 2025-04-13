@@ -52,5 +52,15 @@ async fn main() -> Result<(), ParseError> {
         std::process::exit(1);
     }
 
+    // ✅ 補完後のマップを表示
+    println!("\n✅ スキーマ補完後の設定:");
+    for (k, v) in &flat_file {
+        println!("{} = {}", k, v);
+    }
+
+    let json_file = flatten_to_nested_json(&flat_file);
+    println!("\n✅ ファイルのネスト構造 (JSON形式):");
+    println!("{}", serde_json::to_string_pretty(&json_file).unwrap());
+
     Ok(())
 }

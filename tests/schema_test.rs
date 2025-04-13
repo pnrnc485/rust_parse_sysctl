@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use confparser::{parse_schema_str, validate_with_schema, schema::{SchemaType, SchemaEntry}, ParseError};
+use confparser::{parse_schema_str, validate_with_schema, parse_str, schema::{SchemaType, SchemaEntry}, ParseError};
 
 #[test]
 fn test_parse_valid_schema() {
