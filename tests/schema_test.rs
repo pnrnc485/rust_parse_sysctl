@@ -130,4 +130,38 @@ fn test_string_with_max_length_fails() {
     assert!(validate_with_schema(&config, &schema).is_err());
 }
 
+#[test]
+fn test_enum_type_valid() {
+    let config = BTreeMap::from([
+        ("log.type".to_string(), "auto".to_string())
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.type".to_string(), SchemaType::Enum(vec![
+            "auto".to_string(),
+            "manual".to_string(),
+            "self".to_string(),
+        ]))
+    ]);
+
+    assert!(validate_with_schema(&config, &schema).is_ok());
+}
+
+#[test]
+fn test_enum_type_invalid() {
+    let config = BTreeMap::from([
+        ("log.type".to_string(), "invalid".to_string())
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.type".to_string(), SchemaType::Enum(vec![
+            "auto".to_string(),
+            "manual".to_string(),
+            "self".to_string(),
+        ]))
+    ]);
+
+    assert!(validate_with_schema(&config, &schema).is_err());
+}
+
 

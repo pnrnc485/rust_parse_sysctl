@@ -8,6 +8,7 @@ pub enum SchemaType {
     Bool,
     Int,
     Float,
+    Enum(Vec<String>),
 }
 
 impl SchemaType {
@@ -16,6 +17,16 @@ impl SchemaType {
         if let Some(rest) = s.strip_prefix("string(").and_then(|s| s.strip_suffix(")")) {
             let max_len = rest.parse::<usize>().ok();
             return Some(SchemaType::String(max_len));
+        }
+
+        if s.starts_with('[') && s.ends_with(']') {
+            let inner = &s[1..s.len() - 1];
+            let variants = inner
+                .split(',')
+                .map(|v| v.trim().trim_matches('"').to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>();
+            return Some(SchemaType::Enum(variants));
         }
 
         match s.to_lowercase().as_str() {
@@ -60,6 +71,7 @@ pub fn validate_with_schema(
                 SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
                 SchemaType::Int => value.parse::<i64>().is_ok(),
                 SchemaType::Float => value.parse::<f64>().is_ok(),
+                SchemaType::Enum(variants) => variants.contains(value),
             };
 
             if !is_valid {
