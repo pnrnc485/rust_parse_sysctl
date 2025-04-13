@@ -168,3 +168,40 @@ fn test_enum_type_invalid() {
 
     assert!(validate_with_schema(&config, &schema).is_err());
 }
+
+#[test]
+fn test_required_field_present() {
+    let config = BTreeMap::from([
+        ("log.file".to_string(), "/var/log/app.log".to_string()),
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.file".to_string(), SchemaEntry {
+            typ: SchemaType::String(None),
+            required: true,
+        }),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_required_field_missing() {
+    let config = BTreeMap::new(); // 空の設定
+
+    let schema = BTreeMap::from([
+        ("log.file".to_string(), SchemaEntry {
+            typ: SchemaType::String(None),
+            required: true,
+        }),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_err());
+
+    let errors = result.unwrap_err();
+    assert_eq!(errors.len(), 1);
+    assert!(errors[0].contains("log.file"));
+    assert!(errors[0].contains("required"));
+}
