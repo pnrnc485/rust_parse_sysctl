@@ -2,6 +2,8 @@ use confparser::{
     parse_file,
     parse_url_async,
     flatten_to_nested_json,
+    parse_schema_str,
+    validate_with_schema,
     ParseError,
 };
 
@@ -38,6 +40,16 @@ async fn main() -> Result<(), ParseError> {
         Err(e) => {
             eprintln!("❌ URLの読み込みに失敗: {}", e);
         }
+    }
+
+    let schema_str = std::fs::read_to_string("src/schema.conf")?;
+    let schema_map = parse_schema_str(&schema_str)?;
+    if let Err(errors) = validate_with_schema(&flat_file, &schema_map) {
+        eprintln!("❌ スキーマバリデーションエラー:");
+        for err in errors {
+            eprintln!("- {}", err);
+        }
+        std::process::exit(1);
     }
 
     Ok(())
