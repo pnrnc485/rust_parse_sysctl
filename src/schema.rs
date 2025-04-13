@@ -11,6 +11,12 @@ pub enum SchemaType {
     Enum(Vec<String>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SchemaEntry {
+    pub typ: SchemaType,
+    pub required: bool,
+}
+
 impl SchemaType {
     pub fn from_str(s: &str) -> Option<Self> {
         let s = s.trim();
@@ -43,47 +49,70 @@ impl SchemaType {
     }
 }
 
-pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaType>, ParseError> {
+/// スキーマファイルをパースして BTreeMap に変換する
+pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaEntry>, ParseError> {
     let raw_map = crate::parser::parse_str(input)?;
     let mut schema = BTreeMap::new();
 
-    for (key, type_str) in raw_map {
-        let type_str = type_str.to_string();
-        let Some(schema_type) = SchemaType::from_str(&type_str) else {
-            return Err(ParseError::InvalidLine {
-                line_number: 0,
-                content: format!("unknown schema type: {}", type_str),
-            });
+    for (key, value) in raw_map {
+        let value = value.trim();
+
+        // required フラグ付き形式に対応：string(required)
+        let (type_str, required) = if let Some(inner) = value.strip_suffix(')') {
+            if let Some((typ, meta)) = inner.split_once('(') {
+                let required = meta.trim().eq_ignore_ascii_case("required");
+                (typ.trim(), required)
+            } else {
+                (value, false)
+            }
+        } else {
+            (value, false)
         };
-        schema.insert(key, schema_type);
+
+        let schema_type = SchemaType::from_str(type_str).ok_or(ParseError::InvalidLine {
+            line_number: 0,
+            content: format!("unknown schema type: {}", type_str),
+        })?;
+
+        schema.insert(key, SchemaEntry {
+            typ: schema_type,
+            required,
+        });
     }
 
     Ok(schema)
 }
 
+/// スキーマに基づいて設定を検証する
 pub fn validate_with_schema(
     config: &BTreeMap<String, String>,
-    schema: &BTreeMap<String, SchemaType>,
+    schema: &BTreeMap<String, SchemaEntry>,
 ) -> Result<(), Vec<String>> {
     let mut errors = Vec::new();
 
-    for (key, value) in config {
-        if let Some(expected_type) = schema.get(key) {
-            let is_valid = match expected_type {
-                SchemaType::String(None) => true,
-                SchemaType::String(Some(max)) => value.len() <= *max,
-                SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
-                SchemaType::Int => value.parse::<i64>().is_ok(),
-                SchemaType::Float => value.parse::<f64>().is_ok(),
-                SchemaType::Enum(variants) => variants.contains(value),
-            };
+    for (key, entry) in schema {
+        match config.get(key) {
+            Some(value) => {
+                let is_valid = match &entry.typ {
+                    SchemaType::String(None) => true,
+                    SchemaType::String(Some(max)) => value.len() <= *max,
+                    SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
+                    SchemaType::Int => value.parse::<i64>().is_ok(),
+                    SchemaType::Float => value.parse::<f64>().is_ok(),
+                    SchemaType::Enum(variants) => variants.contains(value),
+                };
 
-            if !is_valid {
-                errors.push(format!(
-                    "{}: '{}' is not a valid {:?}",
-                    key, value, expected_type
-                ));
+                if !is_valid {
+                    errors.push(format!(
+                        "{}: '{}' is not a valid {:?}",
+                        key, value, entry.typ
+                    ));
+                }
             }
+            None if entry.required => {
+                errors.push(format!("{}: required field is missing", key));
+            }
+            _ => {} // 任意項目が存在しない場合は無視
         }
     }
 

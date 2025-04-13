@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use confparser::{parse_schema_str, validate_with_schema, SchemaType, ParseError};
+use confparser::{parse_schema_str, validate_with_schema, schema::{SchemaType, SchemaEntry}, ParseError};
 
 #[test]
 fn test_parse_valid_schema() {
@@ -13,10 +13,10 @@ fn test_parse_valid_schema() {
     let parsed = parse_schema_str(input).unwrap();
 
     let expected = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String(None)),
-        ("debug".to_string(), SchemaType::Bool),
-        ("log.file".to_string(), SchemaType::String(None)),
-        ("log.max".to_string(), SchemaType::Int),
+        ("endpoint".to_string(), SchemaEntry { typ: SchemaType::String(None), required: false }),
+        ("debug".to_string(), SchemaEntry { typ: SchemaType::Bool, required: false }),
+        ("log.file".to_string(), SchemaEntry { typ: SchemaType::String(None), required: false }),
+        ("log.max".to_string(), SchemaEntry { typ: SchemaType::Int, required: false }),
     ]);
 
     assert_eq!(parsed, expected);
@@ -35,23 +35,22 @@ fn test_parse_invalid_schema_type() {
 
 #[test]
 fn test_validate_with_schema_success() {
-    let config = BTreeMap::from([
-        ("endpoint".to_string(), "localhost:3000".to_string()),
-        ("debug".to_string(), "true".to_string()),
-        ("log.max".to_string(), "100".to_string()),
-    ]);
+  let config = BTreeMap::from([
+      ("endpoint".to_string(), "localhost:3000".to_string()),
+      ("debug".to_string(), "true".to_string()),
+      ("log.max".to_string(), "100".to_string()),
+  ]);
 
-    let schema = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String(None)),
-        ("debug".to_string(), SchemaType::Bool),
-        ("log.max".to_string(), SchemaType::Int),
-        ("debug".to_string(), SchemaType::Bool),
-        ("log.max".to_string(), SchemaType::Int),
-    ]);
+  let schema = BTreeMap::from([
+      ("endpoint".to_string(), SchemaEntry { typ: SchemaType::String(None), required: false }),
+      ("debug".to_string(), SchemaEntry { typ: SchemaType::Bool, required: false }),
+      ("log.max".to_string(), SchemaEntry { typ: SchemaType::Int, required: false }),
+  ]);
 
-    let result = validate_with_schema(&config, &schema);
-    assert!(result.is_ok());
+  let result = validate_with_schema(&config, &schema);
+  assert!(result.is_ok());
 }
+
 
 #[test]
 fn test_validate_with_schema_failure() {
@@ -62,9 +61,9 @@ fn test_validate_with_schema_failure() {
     ]);
 
     let schema = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String(None)),
-        ("debug".to_string(), SchemaType::Bool),
-        ("log.max".to_string(), SchemaType::Int),
+        ("endpoint".to_string(), SchemaEntry { typ: SchemaType::String(None), required: false }),
+        ("debug".to_string(), SchemaEntry { typ: SchemaType::Bool, required: false }),
+        ("log.max".to_string(), SchemaEntry { typ: SchemaType::Int, required: false }),
     ]);
 
     let result = validate_with_schema(&config, &schema);
@@ -83,7 +82,7 @@ fn test_validate_with_schema_float() {
     ]);
 
     let schema = BTreeMap::from([
-        ("rate.limit".to_string(), SchemaType::Float),
+        ("rate.limit".to_string(), SchemaEntry { typ: SchemaType::Float, required: false }),
     ]);
 
     let result = validate_with_schema(&config, &schema);
@@ -97,7 +96,7 @@ fn test_validate_with_schema_float_invalid() {
     ]);
 
     let schema = BTreeMap::from([
-        ("rate.limit".to_string(), SchemaType::Float),
+        ("rate.limit".to_string(), SchemaEntry { typ: SchemaType::Float, required: false }),
     ]);
 
     let result = validate_with_schema(&config, &schema);
@@ -111,7 +110,7 @@ fn test_string_with_max_length_passes() {
     ]);
 
     let schema = BTreeMap::from([
-        ("log.message".to_string(), SchemaType::String(Some(20)))
+        ("log.message".to_string(), SchemaEntry { typ: SchemaType::String(Some(20)), required: false }),
     ]);
 
     assert!(validate_with_schema(&config, &schema).is_ok());
@@ -124,7 +123,7 @@ fn test_string_with_max_length_fails() {
     ]);
 
     let schema = BTreeMap::from([
-        ("log.message".to_string(), SchemaType::String(Some(100)))
+        ("log.message".to_string(), SchemaEntry { typ: SchemaType::String(Some(100)), required: false }),
     ]);
 
     assert!(validate_with_schema(&config, &schema).is_err());
@@ -137,11 +136,14 @@ fn test_enum_type_valid() {
     ]);
 
     let schema = BTreeMap::from([
-        ("log.type".to_string(), SchemaType::Enum(vec![
-            "auto".to_string(),
-            "manual".to_string(),
-            "self".to_string(),
-        ]))
+        ("log.type".to_string(), SchemaEntry {
+            typ: SchemaType::Enum(vec![
+                "auto".to_string(),
+                "manual".to_string(),
+                "self".to_string(),
+            ]),
+            required: false,
+        })
     ]);
 
     assert!(validate_with_schema(&config, &schema).is_ok());
@@ -154,14 +156,15 @@ fn test_enum_type_invalid() {
     ]);
 
     let schema = BTreeMap::from([
-        ("log.type".to_string(), SchemaType::Enum(vec![
-            "auto".to_string(),
-            "manual".to_string(),
-            "self".to_string(),
-        ]))
+        ("log.type".to_string(), SchemaEntry {
+            typ: SchemaType::Enum(vec![
+                "auto".to_string(),
+                "manual".to_string(),
+                "self".to_string(),
+            ]),
+            required: false,
+        })
     ]);
 
     assert!(validate_with_schema(&config, &schema).is_err());
 }
-
-
