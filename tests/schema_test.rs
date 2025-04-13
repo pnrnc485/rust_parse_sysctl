@@ -74,3 +74,31 @@ fn test_validate_with_schema_failure() {
     assert!(errors.iter().any(|e| e.contains("log.max")));
 }
 
+#[test]
+fn test_validate_with_schema_float() {
+    let config = BTreeMap::from([
+        ("rate.limit".to_string(), "3.14".to_string()),
+    ]);
+
+    let schema = BTreeMap::from([
+        ("rate.limit".to_string(), SchemaType::Float),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_validate_with_schema_float_invalid() {
+    let config = BTreeMap::from([
+        ("rate.limit".to_string(), "abc.def".to_string()),
+    ]);
+
+    let schema = BTreeMap::from([
+        ("rate.limit".to_string(), SchemaType::Float),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_err());
+}
+

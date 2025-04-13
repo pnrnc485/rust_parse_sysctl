@@ -7,6 +7,7 @@ pub enum SchemaType {
     String,
     Bool,
     Int,
+    Float,
 }
 
 impl SchemaType {
@@ -15,6 +16,7 @@ impl SchemaType {
             "string" => Some(SchemaType::String),
             "bool" => Some(SchemaType::Bool),
             "int" => Some(SchemaType::Int),
+            "float" => Some(SchemaType::Float),
             _ => None,
         }
     }
@@ -50,6 +52,7 @@ pub fn validate_with_schema(
                 SchemaType::String => true,
                 SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
                 SchemaType::Int => value.parse::<i64>().is_ok(),
+                SchemaType::Float => value.parse::<f64>().is_ok(),
             };
 
             if !is_valid {
