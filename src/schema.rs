@@ -15,6 +15,7 @@ pub enum SchemaType {
 pub struct SchemaEntry {
     pub typ: SchemaType,
     pub required: bool,
+    pub default: Option<String>,
 }
 
 impl SchemaType {
@@ -55,28 +56,39 @@ pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaEntry>, Pa
     let mut schema = BTreeMap::new();
 
     for (key, value) in raw_map {
-        let value = value.trim();
+        let mut typ = value.trim();
+        let mut required = false;
+        let mut default = None;
 
-        // required フラグ付き形式に対応：string(required)
-        let (type_str, required) = if let Some(inner) = value.strip_suffix(')') {
-            if let Some((typ, meta)) = inner.split_once('(') {
-                let required = meta.trim().eq_ignore_ascii_case("required");
-                (typ.trim(), required)
-            } else {
-                (value, false)
+        // 括弧付きのメタ情報をパース（例: string(required, default=info)）
+        if let Some(idx) = value.find('(') {
+            let type_part = &value[..idx].trim();
+            let meta_part = &value[idx + 1..value.len().saturating_sub(1)].trim(); // 最後の ')'
+
+            typ = type_part;
+
+            for token in meta_part.split(',') {
+                let token = token.trim();
+                if token.eq_ignore_ascii_case("required") {
+                    required = true;
+                } else if let Some((key, value)) = token.split_once('=') {
+                    if key.trim() == "default" {
+                        default = Some(value.trim().to_string());
+                    }
+                }
             }
-        } else {
-            (value, false)
-        };
+        }
 
-        let schema_type = SchemaType::from_str(type_str).ok_or(ParseError::InvalidLine {
+        // 型をパース
+        let schema_type = SchemaType::from_str(typ).ok_or(ParseError::InvalidLine {
             line_number: 0,
-            content: format!("unknown schema type: {}", type_str),
+            content: format!("unknown schema type: {}", typ),
         })?;
 
         schema.insert(key, SchemaEntry {
             typ: schema_type,
             required,
+            default,
         });
     }
 
@@ -85,7 +97,7 @@ pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaEntry>, Pa
 
 /// スキーマに基づいて設定を検証する
 pub fn validate_with_schema(
-    config: &BTreeMap<String, String>,
+    config: &mut BTreeMap<String, String>,
     schema: &BTreeMap<String, SchemaEntry>,
 ) -> Result<(), Vec<String>> {
     let mut errors = Vec::new();
@@ -111,6 +123,10 @@ pub fn validate_with_schema(
             }
             None if entry.required => {
                 errors.push(format!("{}: required field is missing", key));
+            }
+            None if entry.default.is_some() => {
+                // デフォルト値の補完
+                config.insert(key.clone(), entry.default.clone().unwrap());
             }
             _ => {} // 任意項目が存在しない場合は無視
         }
