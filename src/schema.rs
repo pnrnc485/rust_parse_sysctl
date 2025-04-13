@@ -4,7 +4,7 @@ use crate::ParseError;
 /// スキーマの型を表す列挙型
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SchemaType {
-    String,
+    String(Option<usize>), // 最大文字数を指定できるように
     Bool,
     Int,
     Float,
@@ -12,8 +12,14 @@ pub enum SchemaType {
 
 impl SchemaType {
     pub fn from_str(s: &str) -> Option<Self> {
+        let s = s.trim();
+        if let Some(rest) = s.strip_prefix("string(").and_then(|s| s.strip_suffix(")")) {
+            let max_len = rest.parse::<usize>().ok();
+            return Some(SchemaType::String(max_len));
+        }
+
         match s.to_lowercase().as_str() {
-            "string" => Some(SchemaType::String),
+            "string" => Some(SchemaType::String(None)),
             "bool" => Some(SchemaType::Bool),
             "int" => Some(SchemaType::Int),
             "float" => Some(SchemaType::Float),
@@ -49,7 +55,8 @@ pub fn validate_with_schema(
     for (key, value) in config {
         if let Some(expected_type) = schema.get(key) {
             let is_valid = match expected_type {
-                SchemaType::String => true,
+                SchemaType::String(None) => true,
+                SchemaType::String(Some(max)) => value.len() <= *max,
                 SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
                 SchemaType::Int => value.parse::<i64>().is_ok(),
                 SchemaType::Float => value.parse::<f64>().is_ok(),

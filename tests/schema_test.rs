@@ -13,9 +13,9 @@ fn test_parse_valid_schema() {
     let parsed = parse_schema_str(input).unwrap();
 
     let expected = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String),
+        ("endpoint".to_string(), SchemaType::String(None)),
         ("debug".to_string(), SchemaType::Bool),
-        ("log.file".to_string(), SchemaType::String),
+        ("log.file".to_string(), SchemaType::String(None)),
         ("log.max".to_string(), SchemaType::Int),
     ]);
 
@@ -42,7 +42,9 @@ fn test_validate_with_schema_success() {
     ]);
 
     let schema = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String),
+        ("endpoint".to_string(), SchemaType::String(None)),
+        ("debug".to_string(), SchemaType::Bool),
+        ("log.max".to_string(), SchemaType::Int),
         ("debug".to_string(), SchemaType::Bool),
         ("log.max".to_string(), SchemaType::Int),
     ]);
@@ -60,7 +62,7 @@ fn test_validate_with_schema_failure() {
     ]);
 
     let schema = BTreeMap::from([
-        ("endpoint".to_string(), SchemaType::String),
+        ("endpoint".to_string(), SchemaType::String(None)),
         ("debug".to_string(), SchemaType::Bool),
         ("log.max".to_string(), SchemaType::Int),
     ]);
@@ -101,4 +103,31 @@ fn test_validate_with_schema_float_invalid() {
     let result = validate_with_schema(&config, &schema);
     assert!(result.is_err());
 }
+
+#[test]
+fn test_string_with_max_length_passes() {
+    let config = BTreeMap::from([
+        ("log.message".to_string(), "short message".to_string())
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.message".to_string(), SchemaType::String(Some(20)))
+    ]);
+
+    assert!(validate_with_schema(&config, &schema).is_ok());
+}
+
+#[test]
+fn test_string_with_max_length_fails() {
+    let config = BTreeMap::from([
+        ("log.message".to_string(), "x".repeat(101))
+    ]);
+
+    let schema = BTreeMap::from([
+        ("log.message".to_string(), SchemaType::String(Some(100)))
+    ]);
+
+    assert!(validate_with_schema(&config, &schema).is_err());
+}
+
 
