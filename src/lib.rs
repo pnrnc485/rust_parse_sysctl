@@ -8,4 +8,4 @@ pub use parser::{parse_str, parse_file};
 pub use converter::flatten_to_nested_json;
 pub use errors::ParseError;
 pub use parser_async::parse_url_async;
-pub use schema::{SchemaType, parse_schema_str};
+pub use schema::{SchemaType, parse_schema_str, validate_with_schema};

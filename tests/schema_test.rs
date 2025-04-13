@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use confparser::{parse_schema_str, SchemaType, ParseError};
+use confparser::{parse_schema_str, validate_with_schema, SchemaType, ParseError};
 
 #[test]
 fn test_parse_valid_schema() {
@@ -32,3 +32,45 @@ fn test_parse_invalid_schema_type() {
     let result = parse_schema_str(input);
     assert!(matches!(result, Err(ParseError::InvalidLine { .. })));
 }
+
+#[test]
+fn test_validate_with_schema_success() {
+    let config = BTreeMap::from([
+        ("endpoint".to_string(), "localhost:3000".to_string()),
+        ("debug".to_string(), "true".to_string()),
+        ("log.max".to_string(), "100".to_string()),
+    ]);
+
+    let schema = BTreeMap::from([
+        ("endpoint".to_string(), SchemaType::String),
+        ("debug".to_string(), SchemaType::Bool),
+        ("log.max".to_string(), SchemaType::Int),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_validate_with_schema_failure() {
+    let config = BTreeMap::from([
+        ("endpoint".to_string(), "localhost:3000".to_string()),
+        ("debug".to_string(), "yes".to_string()), // ❌ boolではない
+        ("log.max".to_string(), "abc".to_string()), // ❌ intではない
+    ]);
+
+    let schema = BTreeMap::from([
+        ("endpoint".to_string(), SchemaType::String),
+        ("debug".to_string(), SchemaType::Bool),
+        ("log.max".to_string(), SchemaType::Int),
+    ]);
+
+    let result = validate_with_schema(&config, &schema);
+    assert!(result.is_err());
+
+    let errors = result.unwrap_err();
+    assert_eq!(errors.len(), 2);
+    assert!(errors.iter().any(|e| e.contains("debug")));
+    assert!(errors.iter().any(|e| e.contains("log.max")));
+}
+
