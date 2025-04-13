@@ -14,11 +14,15 @@ pub enum SchemaType {
 impl SchemaType {
     pub fn from_str(s: &str) -> Option<Self> {
         let s = s.trim();
+
+        // string型の処理
+        // 例: string(10) のように最大文字数を指定できるようにする
         if let Some(rest) = s.strip_prefix("string(").and_then(|s| s.strip_suffix(")")) {
             let max_len = rest.parse::<usize>().ok();
             return Some(SchemaType::String(max_len));
         }
 
+        // Enum型の処理
         if s.starts_with('[') && s.ends_with(']') {
             let inner = &s[1..s.len() - 1];
             let variants = inner
