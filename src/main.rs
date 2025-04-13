@@ -10,7 +10,7 @@ use confparser::{
 #[tokio::main]
 async fn main() -> Result<(), ParseError> {
     // ---- ファイルから読み込み ----
-    let file_path = "src/sysctl.conf";
+    let file_path = "conf/sysctl.conf";
     println!("📂 ファイル読み込み中: {}", file_path);
     let mut flat_file = parse_file(file_path)?;
 
@@ -42,7 +42,7 @@ async fn main() -> Result<(), ParseError> {
         }
     }
 
-    let schema_str = std::fs::read_to_string("src/schema.conf")?;
+    let schema_str = std::fs::read_to_string("conf/schema.conf")?;
     let schema_map = parse_schema_str(&schema_str)?;
     if let Err(errors) = validate_with_schema(&mut flat_file, &schema_map) {
         eprintln!("❌ スキーマバリデーションエラー:");
