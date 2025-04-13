@@ -9,6 +9,6 @@ async fn test_parse_url_async_success() {
     assert!(result.is_ok(), "URLのパースに失敗しました: {:?}", result);
 
     let map = result.unwrap();
-    assert_eq!(map.get("endpoint"), Some(&"localhost:3000".to_string()));
-    assert_eq!(map.get("log.file"), Some(&"/var/log/app.log".to_string()));
+    assert_eq!(map.get("net.ipv4.ip_forward"), Some(&"0".to_string()));
+    assert_eq!(map.get("log.file"), Some(&"/var/log/console.log".to_string()));
 }
