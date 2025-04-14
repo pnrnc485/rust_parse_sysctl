@@ -95,6 +95,17 @@ pub fn parse_schema_str(input: &str) -> Result<BTreeMap<String, SchemaEntry>, Pa
     Ok(schema)
 }
 
+fn is_valid_type(value: &str, schema_type: &SchemaType) -> bool {
+    match schema_type {
+        SchemaType::String(None) => true,
+        SchemaType::String(Some(max)) => value.len() <= *max,
+        SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
+        SchemaType::Int => value.parse::<i64>().is_ok(),
+        SchemaType::Float => value.parse::<f64>().is_ok(),
+        SchemaType::Enum(variants) => variants.iter().any(|v| v == value),
+    }
+}
+
 /// スキーマに基づいて設定を検証し、必要に応じて default 値を補完する
 pub fn validate_with_schema(
     config: &mut BTreeMap<String, String>,
@@ -105,16 +116,8 @@ pub fn validate_with_schema(
     for (key, entry) in schema {
         match config.get(key) {
             Some(value) => {
-                let is_valid = match &entry.typ {
-                    SchemaType::String(None) => true,
-                    SchemaType::String(Some(max)) => value.len() <= *max,
-                    SchemaType::Bool => matches!(value.to_lowercase().as_str(), "true" | "false"),
-                    SchemaType::Int => value.parse::<i64>().is_ok(),
-                    SchemaType::Float => value.parse::<f64>().is_ok(),
-                    SchemaType::Enum(variants) => variants.contains(value),
-                };
-
-                if !is_valid {
+                // ✅ スキーマに基づいて値を検証
+                if !is_valid_type(value, &entry.typ) {
                     errors.push(format!(
                         "{}: '{}' is not a valid {:?}",
                         key, value, entry.typ
